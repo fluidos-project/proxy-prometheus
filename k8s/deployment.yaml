@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-prometheus-proxy
+  labels:
+    app: otel-prometheus-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-prometheus-proxy
+  template:
+    metadata:
+      labels:
+        app: otel-prometheus-proxy
+    spec:
+      containers:
+        - name: proxy
+          image: ants-registry.inf.um.es/telemetry/proxy-prometheus
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REAL_PROM_REMOTE_WRITE
+              value: "http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+            - name: PROXY_PORT
+              value: "8080"
