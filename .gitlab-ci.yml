@@ -1,0 +1,38 @@
+image: docker:25.0.3
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:latest
+  DOCKER_TLS_CERTDIR: ""
+
+services:
+  - name: docker:25.0.3-dind
+
+default:
+  tags:
+    - docker
+    - priviledge
+    - shared
+
+stages:
+  - build
+
+build:
+  stage: build
+  script:
+    - echo "Construyendo proxy-prometheus"
+    - docker build -t $IMAGE_TAG .
+    - echo "Imagen construida exitosamente"
+
+    - echo "Ejecutando la imagen"
+    - docker run -d --name proxy-prometheus-test -p 8080:8080 $IMAGE_TAG
+    - echo "Esperando a que arranque"
+    - sleep 3
+
+    - echo "Logs del contenedor"
+    - docker logs proxy-prometheus-test
+    - echo "Matando y limpiando contenedor de test..."
+    - docker stop proxy-prometheus-test && docker rm proxy-prometheus-test
+
+    - echo "Publicando imagen de proxy-prometheus"
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+    - docker push $IMAGE_TAG
